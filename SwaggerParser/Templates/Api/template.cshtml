@@ -1,0 +1,66 @@
+﻿@using SwaggerParser.Model.Api
+@using SwaggerParser.Model.SwaggerApi
+@using System.Linq
+@model SwaggerParser.Model.Api.ApiDefinition
+          
+namespace ApiReference.@Model.Name
+{
+
+    @foreach (var apiSection in Model.Sections)
+    {
+<text>
+    public class @apiSection.Name
+    {
+        private readonly HttpClient _httpClient;
+
+        public @(apiSection.Name)(HttpClient httpClient,string url)
+        {
+            _httpClient = httpClient;
+            _httpClient.BaseAddress = new Uri(url);
+        }
+
+        @foreach (var method in apiSection.Methods)
+        {
+<text>
+    
+    public @method.ReturnType @(method.Name)(
+        @{
+            List<ApiMethodParameter> requiredParameters = method.Parameters.Where(o => o.Required).ToList();
+            List<ApiMethodParameter> optionalParameters = method.Parameters.Where(o => !o.Required).ToList();
+        }
+        @for (int p = 0; p < requiredParameters.Count(); p++)        
+        {       @(requiredParameters[p].Type)@: @method.Parameters[p].Name@(p == requiredParameters.Count() - 1 ? "," : "")    
+        }
+        @for (int p = 0; p < optionalParameters.Count(); p++)
+        {       @(optionalParameters[p].Type)@: @(optionalParameters[p].Name) = default(@optionalParameters[p].Type) @(p == optionalParameters.Count() - 1 ? "," : "")           
+        })
+        {
+</text>
+            
+<text>            
+            string newPath = "@method.Path";
+
+            @foreach (var parameter in method.Parameters.Where(o=>o.ParamType==ParamTypes.Path))
+            {
+                @:newPath.Replace("{@parameter.Name}", @parameter.Name )
+            }
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception(string.Format("Error reading swagger resource - {0} {1}", response.StatusCode,
+                response.Content.ReadAsStringAsync().Result));
+            }
+                string responseString = response.Content.ReadAsStringAsync().Result;
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<model.swaggerresource.listing>(responseString);
+            }
+
+
+        }
+</text>
+        }
+
+
+</text>
+    }
+
+}
